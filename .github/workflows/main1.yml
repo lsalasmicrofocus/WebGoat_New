@@ -1,0 +1,66 @@
+name: FoD SAST with FCLI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+jobs:
+  fod-fcli-sast:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 22
+
+      - name: Install FCLI
+        run: |
+          curl -L https://github.com/fortify/fcli/releases/latest/download/fcli-linux.tgz -o fcli.tgz
+          sudo tar -xzf fcli.tgz -C /usr/local/bin
+          fcli --version
+
+      - name: Login to FoD
+        run: |
+          fcli fod session login \
+            --url "https://api.ams.fortify.com" \
+            --tenant "${{ secrets.FOD_TENANT }}" \
+            --client-id "${{ secrets.FOD_CLIENT_ID }}" \
+            --client-secret "${{ secrets.FOD_CLIENT_SECRET }}"
+
+      - name: Install ScanCentral Client
+        run: |
+          fcli tool sc-client install latest
+
+      - name: Create ScanCentral Package
+        run: |
+          mkdir -p package
+          fcli sc-client package \
+            --src . \
+            --output package/sc-package.zip
+
+      - name: Validate ScanCentral Package
+        id: validate
+        run: |
+          unzip -q package/sc-package.zip -d package/extracted
+
+          if [ ! -d "package/extracted/src" ] || \
+             [ ! -d "package/extracted/libs" ] || \
+             [ ! -f "package/extracted/Metadata.xml" ]; then
+              echo "❌ Not a valid ScanCentral package"
+              exit 1
+          fi
+
+          echo "✅ Valid ScanCentral package"
+
+      - name: Start SAST Scan
+        if: success()
+        run: |
+          fcli fod sast-scan start \
+            --file package/sc-package.zip \
+            --release "${{ secrets.FOD_RELEASE_ID }}"

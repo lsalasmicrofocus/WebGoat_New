@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:    
       - name: Check out source code
-        uses: actions/checkout@v6  
+        uses: actions/checkout@v4  
       - name: Setup Java
-        uses: actions/setup-java@v5   # Set up build tool(s) required to build your project
+        uses: actions/setup-java@v4   # Set up build tool(s) required to build your project
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
           java-version: '22'

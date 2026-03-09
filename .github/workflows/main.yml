@@ -8,75 +8,50 @@ on:
 
 jobs:
   FoD-SAST-Scan:
-    runs-on: ubuntu-latest
-    # Optional but recommended if you later enable PR comments / SARIF uploads:
+    runs-on: ubuntu-latest   # Ubuntu only
+
+    # (Optional) If you enable SARIF export/PR comments later, uncomment:
     # permissions:
     #   contents: read
     #   security-events: write
     #   pull-requests: write
 
-    # Common FoD configuration (your originals preserved)
     env:
+      # ---- Fortify on Demand connection/auth ----
       FOD_URL: https://ams.fortify.com
       FOD_TENANT: ${{ secrets.FOD_TENANT }}
       FOD_CLIENT_ID: ${{ secrets.FOD_CLIENT_ID }}
       FOD_CLIENT_SECRET: ${{ secrets.FOD_CLIENT_SECRET }}
       FOD_RELEASE: ${{ secrets.FOD_RELEASE_ID }}
-      EXTRA_PACKAGE_OPTS: -bt mvn
-      DO_WAIT: true
-      # FOD_RELEASE: MyApp:main        # Optional: defaults to repo:branch
-      FCLI_BOOTSTRAP_VERSION: v3.15   # Optional if you prefer stability over latest
-      DO_EXPORT: true
-      DO_PACKAGE_DEBUG: true
-      # TOOL_DEFINITIONS: https://ftfy.mycompany.com/tool-definitions/v1/tool-definitions.yaml.zip
+
+      # ---- Packaging & scan behavior ----
+      PACKAGE_EXTRA_OPTS: -bt mvn   # (current name; replaces deprecated EXTRA_PACKAGE_OPTS)
+      DO_WAIT: true                 # wait for SAST completion
+      DO_EXPORT: true               # export results to GitHub code scanning (requires GHAS on private repos)
+      DO_PACKAGE_DEBUG: true        # keep package.zip & logs as artifacts for troubleshooting
+      FCLI_BOOTSTRAP_VERSION: v3.15 # pin fcli for stability
+
+      # Increase HTTP socket timeout for large uploads to FoD
+      FOD_LOGIN_EXTRA_OPTS: --socket-timeout=120s
 
     steps:
       - name: Check out source code
         uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v4   # Set up build tool(s) required to build your project
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin       # See 'Supported distributions' for available options
-          java-version: '25'          # Your original version
+          distribution: temurin
+          java-version: '25'
 
-      # ---------- Attempt 1 ----------
-      - id: fod1
-        name: Run FoD SAST Scan (attempt 1)
-        uses: fortify/github-action@v3
-        continue-on-error: true
-        with:
-          debug: true
-
-      - name: Wait before retry (after attempt 1)
-        if: steps.fod1.outcome == 'failure'
-        run: sleep 30
-
-      # ---------- Attempt 2 ----------
-      - id: fod2
-        name: Run FoD SAST Scan (attempt 2)
-        if: steps.fod1.outcome == 'failure'
-        uses: fortify/github-action@v3
-        continue-on-error: true
-        with:
-          debug: true
-
-      - name: Wait before retry (after attempt 2)
-        if: steps.fod2.outcome == 'failure'
-        run: sleep 30
-
-      # ---------- Attempt 3 (final) ----------
-      - id: fod3
-        name: Run FoD SAST Scan (attempt 3)
-        if: steps.fod2.outcome == 'failure'
-        uses: fortify/github-action@v3
-        # Final attempt will fail the job if it still errors
-        with:
-          debug: true
-
-      # Optional safeguard if all attempts were skipped (edge case)
-      - name: Ensure scan ran
-        if: ${{ steps.fod1.outcome == 'skipped' && steps.fod2.outcome == 'skipped' && steps.fod3.outcome == 'skipped' }}
+      - name: Environment info (debug)
         run: |
-          echo "All scan attempts were skipped; verify conditions and inputs." >&2
-          exit 1
+          echo "Runner:"; uname -a
+          echo "Disk:"; df -h
+          echo "Memory:"; (free -h || true)
+          echo "Java:"; java -version
+
+      - name: Run Fortify scans (FoD SAST via fcli CI)
+        uses: fortify/github-action@v3
+        with:
+          debug: true

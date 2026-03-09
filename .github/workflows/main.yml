@@ -1,96 +1,41 @@
 name: Fortify on Demand Scan
-
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   FoD-SAST-Scan:
     runs-on: ubuntu-latest
-
-    steps:
+    steps:    
       - name: Check out source code
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v4  
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4   # Set up build tool(s) required to build your project
         with:
-          distribution: temurin
-          java-version: '25'   # keep your original setting
-
-      # -------- Attempt 1 --------
-      - id: fod1
-        name: Run FoD SAST Scan (attempt 1)
-        uses: fortify/github-action@v3
-        continue-on-error: true
+          distribution: 'temurin' # See  'Supported distributions' for available options
+          java-version: '25'
+    # permissions:               # When overriding default permissions, following are required:
+    #   contents: read           # Required for checkout action
+    #   security-events: write   # Required for  publishing security reports to GitHub Security tab
+    #   pull-requests: write     # Required if DO_PR_COMMENT is set to true
+      - uses: actions/checkout@v4            # Check out source code
+        name: Run FoD SAST Scan
+      - uses: fortify/github-action@v3       # Run Fortify scans
         with:
           debug: true
         env:
+          #FOD_URL: ${{ vars.FOD_URL }}
           FOD_URL: https://ams.fortify.com
-          FOD_TENANT: ${{ secrets.FOD_TENANT }}
+          FOD_TENANT: ${{secrets.FOD_TENANT}}
           FOD_CLIENT_ID: ${{ secrets.FOD_CLIENT_ID }}
           FOD_CLIENT_SECRET: ${{ secrets.FOD_CLIENT_SECRET }}
-          FOD_RELEASE: ${{ secrets.FOD_RELEASE_ID }}
-          EXTRA_PACKAGE_OPTS: -bt mvn
+          FOD_RELEASE: ${{secrets.FOD_RELEASE_ID}}
+          EXTRA_PACKAGE_OPTS: -bt mvn 
           DO_WAIT: true
-          FCLI_BOOTSTRAP_VERSION: v3.15
+          # FOD_RELEASE: MyApp:main        # Optional: defaults to repo:branch
+          FCLI_BOOTSTRAP_VERSION: v3.15  # Optional if you prefer stability over latest
           DO_EXPORT: true
           DO_PACKAGE_DEBUG: true
           # TOOL_DEFINITIONS: https://ftfy.mycompany.com/tool-definitions/v1/tool-definitions.yaml.zip
-
-      - name: Wait before retry (after attempt 1)
-        if: steps.fod1.outcome == 'failure'
-        run: sleep 30
-
-      # -------- Attempt 2 --------
-      - id: fod2
-        name: Run FoD SAST Scan (attempt 2)
-        if: steps.fod1.outcome == 'failure'
-        uses: fortify/github-action@v3
-        continue-on-error: true
-        with:
-          debug: true
-        env:
-          FOD_URL: https://ams.fortify.com
-          FOD_TENANT: ${{ secrets.FOD_TENANT }}
-          FOD_CLIENT_ID: ${{ secrets.FOD_CLIENT_ID }}
-          FOD_CLIENT_SECRET: ${{ secrets.FOD_CLIENT_SECRET }}
-          FOD_RELEASE: ${{ secrets.FOD_RELEASE_ID }}
-          EXTRA_PACKAGE_OPTS: -bt mvn
-          DO_WAIT: true
-          FCLI_BOOTSTRAP_VERSION: v3.15
-          DO_EXPORT: true
-          DO_PACKAGE_DEBUG: true
-
-      - name: Wait before retry (after attempt 2)
-        if: steps.fod2.outcome == 'failure'
-        run: sleep 30
-
-      # -------- Attempt 3 (final) --------
-      - id: fod3
-        name: Run FoD SAST Scan (attempt 3)
-        if: steps.fod2.outcome == 'failure'
-        uses: fortify/github-action@v3
-        # no continue-on-error on final attempt; if it fails, the job fails
-        with:
-          debug: true
-        env:
-          FOD_URL: https://ams.fortify.com
-          FOD_TENANT: ${{ secrets.FOD_TENANT }}
-          FOD_CLIENT_ID: ${{ secrets.FOD_CLIENT_ID }}
-          FOD_CLIENT_SECRET: ${{ secrets.FOD_CLIENT_SECRET }}
-          FOD_RELEASE: ${{ secrets.FOD_RELEASE_ID }}
-          EXTRA_PACKAGE_OPTS: -bt mvn
-          DO_WAIT: true
-          FCLI_BOOTSTRAP_VERSION: v3.15
-          DO_EXPORT: true
-          DO_PACKAGE_DEBUG: true
-
-      # Optional: fail the job if all attempts were skipped (edge case)
-      - name: Ensure scan ran
-        if: ${{ steps.fod1.outcome == 'skipped' && steps.fod2.outcome == 'skipped' && steps.fod3.outcome == 'skipped' }}
-        run: |
-          echo "All scan attempts were skipped; verify conditions and inputs." >&2
-          exit 1

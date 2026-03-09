@@ -8,18 +8,30 @@ on:
 jobs:
   fortify:
     runs-on: ubuntu-latest
+    steps:    
+      - name: Check out source code
+        uses: actions/checkout@v4  
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin' # See 'Supported distributions' for available options
+          java-version: '22'
     # permissions:               # When overriding default permissions, following are required:
     #   contents: read           # Required for checkout action
     #   security-events: write   # Required for  publishing security reports to GitHub Security tab
     #   pull-requests: write     # Required if DO_PR_COMMENT is set to true
-    steps:
       - uses: actions/checkout@v4            # Check out source code
       - uses: actions/setup-<build-tool>@vX  # Set up build tool(s) required to build your project
       - uses: fortify/github-action@v3       # Run Fortify scans
         env:
-          FOD_URL: ${{ vars.FOD_URL }}
+          #FOD_URL: ${{ vars.FOD_URL }}
+          FOD_URL: https://ams.fortify.com
+          FOD_TENANT: ${{secrets.FOD_TENANT}}
           FOD_CLIENT_ID: ${{ secrets.FOD_CLIENT_ID }}
           FOD_CLIENT_SECRET: ${{ secrets.FOD_CLIENT_SECRET }}
+          FOD_RELEASE: ${{secrets.FOD_RELEASE_ID}}
+          EXTRA_PACKAGE_OPTS: -bt none 
+          DO_WAIT: true
           # FOD_RELEASE: MyApp:main        # Optional: defaults to repo:branch
           # FCLI_BOOTSTRAP_VERSION: v3.15  # Optional if you prefer stability over latest
           DO_EXPORT: true

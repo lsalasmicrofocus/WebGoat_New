@@ -29,7 +29,7 @@ jobs:
           FOD_CLIENT_ID: ${{ secrets.FOD_CLIENT_ID }}
           FOD_CLIENT_SECRET: ${{ secrets.FOD_CLIENT_SECRET }}
           FOD_RELEASE: ${{secrets.FOD_RELEASE_ID}}
-          EXTRA_PACKAGE_OPTS: -bt none 
+          EXTRA_PACKAGE_OPTS: -bt mvn 
           DO_WAIT: true
           # FOD_RELEASE: MyApp:main        # Optional: defaults to repo:branch
           # FCLI_BOOTSTRAP_VERSION: v3.15  # Optional if you prefer stability over latest

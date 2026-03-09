@@ -12,7 +12,7 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v4  
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4   # Set up build tool(s) required to build your project
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
           java-version: '22'
@@ -21,7 +21,6 @@ jobs:
     #   security-events: write   # Required for  publishing security reports to GitHub Security tab
     #   pull-requests: write     # Required if DO_PR_COMMENT is set to true
       - uses: actions/checkout@v4            # Check out source code
-      - uses: actions/setup-<build-tool>@vX  # Set up build tool(s) required to build your project
       - uses: fortify/github-action@v3       # Run Fortify scans
         env:
           #FOD_URL: ${{ vars.FOD_URL }}

@@ -32,7 +32,7 @@ jobs:
           EXTRA_PACKAGE_OPTS: -bt mvn 
           DO_WAIT: true
           # FOD_RELEASE: MyApp:main        # Optional: defaults to repo:branch
-          # FCLI_BOOTSTRAP_VERSION: v3.15  # Optional if you prefer stability over latest
+          FCLI_BOOTSTRAP_VERSION: v3.15  # Optional if you prefer stability over latest
           DO_EXPORT: true
           DO_PACKAGE_DEBUG: true
           # TOOL_DEFINITIONS: https://ftfy.mycompany.com/tool-definitions/v1/tool-definitions.yaml.zip

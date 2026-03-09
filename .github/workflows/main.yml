@@ -24,7 +24,7 @@ jobs:
         name: Run FoD SAST Scan
       - uses: fortify/github-action@v3       # Run Fortify scans
         with:
-          sast-scan: true
+          debug: true
         env:
           #FOD_URL: ${{ vars.FOD_URL }}
           FOD_URL: https://ams.fortify.com

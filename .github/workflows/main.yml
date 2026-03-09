@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  fortify:
+  FoD-SAST-Scan:
     runs-on: ubuntu-latest
     steps:    
       - name: Check out source code
@@ -21,7 +21,10 @@ jobs:
     #   security-events: write   # Required for  publishing security reports to GitHub Security tab
     #   pull-requests: write     # Required if DO_PR_COMMENT is set to true
       - uses: actions/checkout@v4            # Check out source code
+        name: Run FoD SAST Scan
       - uses: fortify/github-action@v3       # Run Fortify scans
+        with:
+          sast-scan: true
         env:
           #FOD_URL: ${{ vars.FOD_URL }}
           FOD_URL: https://ams.fortify.com
